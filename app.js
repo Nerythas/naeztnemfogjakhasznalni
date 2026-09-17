@@ -165,10 +165,6 @@ async function loadRecords() {
     data.map(renderRecord).join("");
 
 
-  // ========================================
-  // MEZŐK MENTÉSE
-  // ========================================
-
   recordsEl
     .querySelectorAll("[data-save]")
     .forEach(el => {
@@ -177,10 +173,6 @@ async function loadRecords() {
 
     });
 
-
-  // ========================================
-  // BEJEGYZÉS TÖRLÉSE
-  // ========================================
 
   recordsEl
     .querySelectorAll("[data-delete]")
@@ -191,10 +183,6 @@ async function loadRecords() {
     });
 
 
-  // ========================================
-  // KÉPFELTÖLTÉS
-  // ========================================
-
   recordsEl
     .querySelectorAll("[data-upload]")
     .forEach(el => {
@@ -203,10 +191,6 @@ async function loadRecords() {
 
     });
 
-
-  // ========================================
-  // KÉPEK BETÖLTÉSE
-  // ========================================
 
   const imageContainers =
     recordsEl.querySelectorAll("[data-images-for]");
@@ -227,7 +211,6 @@ async function loadRecords() {
 
 function canEditField(record, field) {
 
-  // ADMIN MINDENT MÓDOSÍTHAT
   if (profile.role === "admin") {
     return true;
   }
@@ -236,27 +219,20 @@ function canEditField(record, field) {
     profile.organizations.name;
 
 
-  // REFOmix
   if (field === "refomix_note") {
     return organization === "ReFoMix";
   }
 
 
-  // KÖZTERÜLET
   if (field === "kozterulet_note") {
     return organization === "Közterület";
   }
 
 
-  // RENDŐRSÉG
   if (field === "rendorseg_note") {
     return organization === "Rendőrség";
   }
 
-
-  // KÖZÖS ALAPADATOK
-  // Ezeket csak az a szervezet módosíthatja,
-  // amelyik a rekordot létrehozta.
 
   if (
     field === "location" ||
@@ -311,18 +287,9 @@ function renderRecord(record) {
 
       <div class="record-head">
 
-        <div>
-
-          <strong>
-            Bejegyzés #${record.id}
-          </strong>
-
-          <div class="record-created">
-            Létrehozva: ${formatDateTime(record.created_at)}
-          </div>
-
-        </div>
-
+        <strong>
+          Bejegyzés #${record.id}
+        </strong>
 
         ${
           canDelete
@@ -357,12 +324,12 @@ function renderRecord(record) {
 
 
       ${fieldInput(
-        "Dátum",
+        "Dátum és idő",
         "record_date",
         record.id,
-        record.record_date || "",
+        formatDateTimeInput(record.record_date),
         canDate,
-        "date"
+        "datetime-local"
       )}
 
 
@@ -613,8 +580,22 @@ async function saveField(event) {
   const field =
     event.target.dataset.field;
 
-  const value =
+  let value =
     event.target.value;
+
+
+  // datetime-local értéket
+  // ISO formátumba alakítjuk
+
+  if (
+    field === "record_date" &&
+    value
+  ) {
+
+    value =
+      new Date(value).toISOString();
+
+  }
 
 
   const { error } =
@@ -636,6 +617,7 @@ async function saveField(event) {
     );
 
   }
+
 
   await loadRecords();
 }
@@ -664,7 +646,6 @@ async function uploadImages(e) {
 
   for (const file of files) {
 
-    // Csak kép
     if (!file.type.startsWith("image/")) {
 
       alert(
@@ -675,7 +656,6 @@ async function uploadImages(e) {
     }
 
 
-    // Maximum 10 MB
     if (file.size > 10 * 1024 * 1024) {
 
       alert(
@@ -686,7 +666,6 @@ async function uploadImages(e) {
     }
 
 
-    // Biztonságos fájlnév
     const safeName =
       file.name.replace(
         /[^a-zA-Z0-9._-]/g,
@@ -694,12 +673,9 @@ async function uploadImages(e) {
       );
 
 
-    // Egyedi storage útvonal
     const path =
       `${profile.id}/${recordId}/${crypto.randomUUID()}-${safeName}`;
 
-
-    // FELTÖLTÉS SUPABASE STORAGE-BA
 
     const { error: uploadError } =
       await supabase.storage
@@ -726,8 +702,6 @@ async function uploadImages(e) {
     }
 
 
-    // ADATBÁZISBA IS ELMENTJÜK
-
     const { error: dbError } =
       await supabase
         .from("record_images")
@@ -742,9 +716,6 @@ async function uploadImages(e) {
           size_bytes: file.size
         });
 
-
-    // Ha az adatbázisba nem sikerült
-    // menteni, töröljük a feltöltött fájlt is.
 
     if (dbError) {
 
@@ -762,12 +733,7 @@ async function uploadImages(e) {
   }
 
 
-  // Input ürítése
-
   input.value = "";
-
-
-  // Képek frissítése
 
   await loadImages(recordId);
 }
@@ -789,8 +755,6 @@ async function loadImages(recordId) {
     return;
   }
 
-
-  // KÉPEK ADATAINAK LEKÉRÉSE
 
   const { data, error } =
     await supabase
@@ -821,8 +785,6 @@ async function loadImages(recordId) {
   }
 
 
-  // NINCS KÉP
-
   if (!data.length) {
 
     container.innerHTML =
@@ -834,15 +796,11 @@ async function loadImages(recordId) {
   }
 
 
-  // STORAGE ÚTVONALAK
-
   const paths =
     data.map(
       x => x.storage_path
     );
 
-
-  // IDEIGLENES, BIZTONSÁGOS URL-EK
 
   const {
     data: signed,
@@ -868,8 +826,6 @@ async function loadImages(recordId) {
   }
 
 
-  // URL-EK ÖSSZEKAPCSOLÁSA
-
   const urlMap =
     new Map(
       (signed || []).map(
@@ -880,8 +836,6 @@ async function loadImages(recordId) {
       )
     );
 
-
-  // KÉPEK MEGJELENÍTÉSE
 
   container.innerHTML =
     data.map(img => {
@@ -959,8 +913,6 @@ async function loadImages(recordId) {
     }).join("");
 
 
-  // KÉP TÖRLÉS GOMBOK
-
   container
     .querySelectorAll(
       "[data-delete-image]"
@@ -1009,8 +961,6 @@ async function deleteImage(e) {
   }
 
 
-  // ADATBÁZISBÓL TÖRLÉS
-
   const { error: dbError } =
     await supabase
       .from("record_images")
@@ -1028,8 +978,6 @@ async function deleteImage(e) {
     return;
   }
 
-
-  // STORAGE-BÓL TÖRLÉS
 
   const {
     error: storageError
@@ -1068,10 +1016,6 @@ document.getElementById("addBtn").onclick =
           organization_id:
             profile.organization_id,
           location: "",
-          record_date:
-            new Date()
-              .toISOString()
-              .slice(0, 10),
           status: "Új"
         });
 
@@ -1137,6 +1081,50 @@ async function deleteRecord(event) {
 
 
 // ==========================================
+// DÁTUM ÉS IDŐ FORMÁZÁSA
+// ==========================================
+
+function formatDateTimeInput(value) {
+
+  if (!value) {
+    return "";
+  }
+
+  const date =
+    new Date(value);
+
+  if (isNaN(date.getTime())) {
+    return "";
+  }
+
+  const year =
+    date.getFullYear();
+
+  const month =
+    String(
+      date.getMonth() + 1
+    ).padStart(2, "0");
+
+  const day =
+    String(
+      date.getDate()
+    ).padStart(2, "0");
+
+  const hours =
+    String(
+      date.getHours()
+    ).padStart(2, "0");
+
+  const minutes =
+    String(
+      date.getMinutes()
+    ).padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+
+// ==========================================
 // BIZTONSÁGOS HTML KIÍRÁS
 // ==========================================
 
@@ -1153,26 +1141,4 @@ function esc(value) {
         "'": "&#039;"
       }[character])
     );
-}
-
-
-// ==========================================
-// DÁTUM ÉS IDŐ FORMÁZÁSA
-// ==========================================
-
-function formatDateTime(value) {
-
-  if (!value) {
-    return "";
-  }
-
-  const date = new Date(value);
-
-  return date.toLocaleString("hu-HU", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
 }
