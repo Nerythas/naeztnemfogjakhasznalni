@@ -311,9 +311,18 @@ function renderRecord(record) {
 
       <div class="record-head">
 
-        <strong>
-          Bejegyzés #${record.id}
-        </strong>
+        <div>
+
+          <strong>
+            Bejegyzés #${record.id}
+          </strong>
+
+          <div class="record-created">
+            Létrehozva: ${formatDateTime(record.created_at)}
+          </div>
+
+        </div>
+
 
         ${
           canDelete
@@ -1144,4 +1153,26 @@ function esc(value) {
         "'": "&#039;"
       }[character])
     );
+}
+
+
+// ==========================================
+// DÁTUM ÉS IDŐ FORMÁZÁSA
+// ==========================================
+
+function formatDateTime(value) {
+
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+
+  return date.toLocaleString("hu-HU", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 }
