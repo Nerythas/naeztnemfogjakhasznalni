@@ -260,9 +260,6 @@ function renderRecord(record) {
   const canLocation =
     canEditField(record, "location");
 
-  const canDate =
-    canEditField(record, "record_date");
-
   const canStatus =
     canEditField(record, "status");
 
@@ -306,7 +303,7 @@ function renderRecord(record) {
       </div>
 
 
-      <!-- KÖZÖS ADATOK -->
+      <!-- KÖZÖS INFORMÁCIÓ -->
 
       <div class="section-title">
         Közös információ
@@ -323,14 +320,18 @@ function renderRecord(record) {
       )}
 
 
-      ${fieldInput(
-        "Dátum és idő",
-        "record_date",
-        record.id,
-        formatDateTimeInput(record.record_date),
-        canDate,
-        "datetime-local"
-      )}
+      <!-- DÁTUM ÉS IDŐ -->
+
+      <label>
+        Dátum és idő
+
+        <input
+          type="text"
+          value="${esc(formatDateTime(record.created_at))}"
+          disabled
+        >
+
+      </label>
 
 
       ${fieldSelect(
@@ -580,22 +581,8 @@ async function saveField(event) {
   const field =
     event.target.dataset.field;
 
-  let value =
+  const value =
     event.target.value;
-
-
-  // datetime-local értéket
-  // ISO formátumba alakítjuk
-
-  if (
-    field === "record_date" &&
-    value
-  ) {
-
-    value =
-      new Date(value).toISOString();
-
-  }
 
 
   const { error } =
@@ -616,6 +603,7 @@ async function saveField(event) {
       error.message
     );
 
+    return;
   }
 
 
@@ -934,16 +922,13 @@ async function deleteImage(e) {
   const button =
     e.currentTarget;
 
-
   const imageId =
     Number(
       button.dataset.deleteImage
     );
 
-
   const path =
     button.dataset.path;
-
 
   const recordId =
     Number(
@@ -1084,7 +1069,7 @@ async function deleteRecord(event) {
 // DÁTUM ÉS IDŐ FORMÁZÁSA
 // ==========================================
 
-function formatDateTimeInput(value) {
+function formatDateTime(value) {
 
   if (!value) {
     return "";
@@ -1097,30 +1082,16 @@ function formatDateTimeInput(value) {
     return "";
   }
 
-  const year =
-    date.getFullYear();
-
-  const month =
-    String(
-      date.getMonth() + 1
-    ).padStart(2, "0");
-
-  const day =
-    String(
-      date.getDate()
-    ).padStart(2, "0");
-
-  const hours =
-    String(
-      date.getHours()
-    ).padStart(2, "0");
-
-  const minutes =
-    String(
-      date.getMinutes()
-    ).padStart(2, "0");
-
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
+  return date.toLocaleString(
+    "hu-HU",
+    {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    }
+  );
 }
 
 
