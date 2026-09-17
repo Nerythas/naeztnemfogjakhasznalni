@@ -10,22 +10,34 @@ const recordsEl = document.getElementById("records");
 
 let profile = null;
 
+const IMAGE_BUCKET = "record-images";
+
+
+// ==========================================
 // BEJELENTKEZÉS
+// ==========================================
+
 document.getElementById("loginBtn").onclick = async () => {
+
   msg.textContent = "Bejelentkezés…";
 
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
+  const email =
+    document.getElementById("email").value.trim();
+
+  const password =
+    document.getElementById("password").value;
 
   if (!email || !password) {
-    msg.textContent = "Kérjük, adja meg az e-mail címet és a jelszót.";
+    msg.textContent =
+      "Kérjük, adja meg az e-mail címet és a jelszót.";
     return;
   }
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
+  const { error } =
+    await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
 
   if (error) {
     msg.textContent = error.message;
@@ -34,40 +46,66 @@ document.getElementById("loginBtn").onclick = async () => {
   }
 };
 
+
+// ==========================================
 // KILÉPÉS
-document.getElementById("logoutBtn").onclick = async () => {
-  await supabase.auth.signOut();
-};
+// ==========================================
 
+document.getElementById("logoutBtn").onclick =
+  async () => {
+    await supabase.auth.signOut();
+  };
+
+
+// ==========================================
 // BEJELENTKEZÉSI ÁLLAPOT FIGYELÉSE
-supabase.auth.onAuthStateChange(async (_event, session) => {
-  if (session) {
-    await loadProfile(session.user);
-  } else {
-    app.classList.add("hidden");
-    login.classList.remove("hidden");
-  }
-});
+// ==========================================
 
+supabase.auth.onAuthStateChange(
+  async (_event, session) => {
+
+    if (session) {
+
+      await loadProfile(session.user);
+
+    } else {
+
+      app.classList.add("hidden");
+      login.classList.remove("hidden");
+
+    }
+
+  }
+);
+
+
+// ==========================================
 // FELHASZNÁLÓ BETÖLTÉSE
+// ==========================================
+
 async function loadProfile(user) {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select(`
-      id,
-      full_name,
-      organization_id,
-      role,
-      organizations (
+
+  const { data, error } =
+    await supabase
+      .from("profiles")
+      .select(`
         id,
-        name
-      )
-    `)
-    .eq("id", user.id)
-    .single();
+        full_name,
+        organization_id,
+        role,
+        organizations (
+          id,
+          name
+        )
+      `)
+      .eq("id", user.id)
+      .single();
 
   if (error) {
-    msg.textContent = "Profilhiba: " + error.message;
+
+    msg.textContent =
+      "Profilhiba: " + error.message;
+
     return;
   }
 
@@ -85,48 +123,101 @@ async function loadProfile(user) {
     data.organizations.name;
 
   document.getElementById("permission").textContent =
-    "A saját szervezeti mezők módosíthatók. Más szervezetek adatai csak olvashatók.";
+    "A saját szervezeti mezők módosíthatók. Más szervezetek adatai csak olvashatók. A képek minden bejelentkezett felhasználó számára megtekinthetők és feltölthetők.";
 
   await loadRecords();
 }
 
+
+// ==========================================
 // BEJEGYZÉSEK BETÖLTÉSE
+// ==========================================
+
 async function loadRecords() {
-  const { data, error } = await supabase
-    .from("records_view")
-    .select("*")
-    .order("created_at", {
-      ascending: false
-    });
+
+  const { data, error } =
+    await supabase
+      .from("records_view")
+      .select("*")
+      .order("created_at", {
+        ascending: false
+      });
 
   if (error) {
+
     recordsEl.innerHTML =
-      `<div class="card error">${esc(error.message)}</div>`;
+      `<div class="card error">
+        ${esc(error.message)}
+      </div>`;
+
     return;
   }
 
   if (!data || data.length === 0) {
+
     recordsEl.innerHTML =
       '<div class="card">Még nincs bejegyzés.</div>';
+
     return;
   }
 
   recordsEl.innerHTML =
     data.map(renderRecord).join("");
 
+
+  // ========================================
   // MEZŐK MENTÉSE
+  // ========================================
+
   recordsEl
     .querySelectorAll("[data-save]")
     .forEach(el => {
+
       el.addEventListener("change", saveField);
+
     });
 
-  // TÖRLÉS
+
+  // ========================================
+  // BEJEGYZÉS TÖRLÉSE
+  // ========================================
+
   recordsEl
     .querySelectorAll("[data-delete]")
     .forEach(el => {
+
       el.addEventListener("click", deleteRecord);
+
     });
+
+
+  // ========================================
+  // KÉPFELTÖLTÉS
+  // ========================================
+
+  recordsEl
+    .querySelectorAll("[data-upload]")
+    .forEach(el => {
+
+      el.addEventListener("change", uploadImages);
+
+    });
+
+
+  // ========================================
+  // KÉPEK BETÖLTÉSE
+  // ========================================
+
+  const imageContainers =
+    recordsEl.querySelectorAll("[data-images-for]");
+
+  await Promise.all(
+    Array.from(imageContainers).map(el =>
+      loadImages(
+        Number(el.dataset.imagesFor)
+      )
+    )
+  );
 }
 
 
@@ -144,30 +235,40 @@ function canEditField(record, field) {
   const organization =
     profile.organizations.name;
 
+
   // REFOmix
   if (field === "refomix_note") {
     return organization === "ReFoMix";
   }
+
 
   // KÖZTERÜLET
   if (field === "kozterulet_note") {
     return organization === "Közterület";
   }
 
+
   // RENDŐRSÉG
   if (field === "rendorseg_note") {
     return organization === "Rendőrség";
   }
 
+
   // KÖZÖS ALAPADATOK
   // Ezeket csak az a szervezet módosíthatja,
   // amelyik a rekordot létrehozta.
+
   if (
     field === "location" ||
     field === "record_date" ||
     field === "status"
   ) {
-    return record.organization_id === profile.organization_id;
+
+    return (
+      record.organization_id ===
+      profile.organization_id
+    );
+
   }
 
   return false;
@@ -198,113 +299,200 @@ function renderRecord(record) {
   const canRendorseg =
     canEditField(record, "rendorseg_note");
 
+
   const canDelete =
     profile.role === "admin" ||
-    record.organization_id === profile.organization_id;
+    record.organization_id ===
+    profile.organization_id;
+
 
   return `
-  <article class="card record">
+    <article class="card record">
 
-    <div class="record-head">
-      <strong>Bejegyzés #${record.id}</strong>
+      <div class="record-head">
 
-      ${
-        canDelete
-          ? `<button
-               class="danger"
-               data-delete="${record.id}">
-               Törlés
-             </button>`
-          : ""
-      }
-    </div>
+        <strong>
+          Bejegyzés #${record.id}
+        </strong>
 
+        ${
+          canDelete
+            ? `
+              <button
+                class="danger"
+                data-delete="${record.id}">
+                Törlés
+              </button>
+            `
+            : ""
+        }
 
-    <!-- KÖZÖS ADATOK -->
-
-    <div class="section-title">
-      Közös információ
-    </div>
-
-    ${fieldInput(
-      "Helyszín",
-      "location",
-      record.id,
-      record.location || "",
-      canLocation,
-      "text"
-    )}
-
-    ${fieldInput(
-      "Dátum",
-      "record_date",
-      record.id,
-      record.record_date || "",
-      canDate,
-      "date"
-    )}
-
-    ${fieldSelect(
-      record.id,
-      record.status || "Új",
-      canStatus
-    )}
-
-
-    <!-- REFOmix -->
-
-    <div class="organization-box refomix">
-      <div class="organization-title">
-        🔴 ReFoMix
       </div>
 
-      ${fieldInput(
-        "ReFoMix megjegyzés",
-        "refomix_note",
-        record.id,
-        record.refomix_note || "",
-        canRefomix,
-        "textarea"
-      )}
-    </div>
 
+      <!-- KÖZÖS ADATOK -->
 
-    <!-- KÖZTERÜLET -->
-
-    <div class="organization-box kozterulet">
-      <div class="organization-title">
-        🔵 Közterület
+      <div class="section-title">
+        Közös információ
       </div>
 
+
       ${fieldInput(
-        "Közterület megjegyzés",
-        "kozterulet_note",
+        "Helyszín",
+        "location",
         record.id,
-        record.kozterulet_note || "",
-        canKozterulet,
-        "textarea"
+        record.location || "",
+        canLocation,
+        "text"
       )}
-    </div>
 
 
-    <!-- RENDŐRSÉG -->
+      ${fieldInput(
+        "Dátum",
+        "record_date",
+        record.id,
+        record.record_date || "",
+        canDate,
+        "date"
+      )}
 
-    <div class="organization-box rendorseg">
-      <div class="organization-title">
-        🟢 Rendőrség
+
+      ${fieldSelect(
+        record.id,
+        record.status || "Új",
+        canStatus
+      )}
+
+
+      <!-- SZERVEZETI INFORMÁCIÓK -->
+
+      <div class="section-title">
+        Szervezeti információk
       </div>
 
-      ${fieldInput(
-        "Rendőrség megjegyzés",
-        "rendorseg_note",
-        record.id,
-        record.rendorseg_note || "",
-        canRendorseg,
-        "textarea"
-      )}
-    </div>
 
-  </article>
+      <!-- REFOmix -->
+
+      <div class="organization-box refomix">
+
+        <div class="organization-title">
+          🔴 ReFoMix
+        </div>
+
+        ${fieldInput(
+          "ReFoMix megjegyzés",
+          "refomix_note",
+          record.id,
+          record.refomix_note || "",
+          canRefomix,
+          "textarea"
+        )}
+
+      </div>
+
+
+      <!-- KÖZTERÜLET -->
+
+      <div class="organization-box kozterulet">
+
+        <div class="organization-title">
+          🔵 Közterület
+        </div>
+
+        ${fieldInput(
+          "Közterület megjegyzés",
+          "kozterulet_note",
+          record.id,
+          record.kozterulet_note || "",
+          canKozterulet,
+          "textarea"
+        )}
+
+      </div>
+
+
+      <!-- RENDŐRSÉG -->
+
+      <div class="organization-box rendorseg">
+
+        <div class="organization-title">
+          🟢 Rendőrség
+        </div>
+
+        ${fieldInput(
+          "Rendőrség megjegyzés",
+          "rendorseg_note",
+          record.id,
+          record.rendorseg_note || "",
+          canRendorseg,
+          "textarea"
+        )}
+
+      </div>
+
+
+      <!-- KÉPEK -->
+
+      ${imageSection(record.id)}
+
+
+    </article>
+  `;
+}
+
+
+// ==========================================
+// KÉPEK SZEKCIÓ
+// ==========================================
+
+function imageSection(recordId) {
+
+  return `
+    <div class="images-section">
+
+      <div class="images-head">
+
+        <div>
+
+          <div class="section-title">
+            📷 Képek
+          </div>
+
+          <div class="images-help">
+            Minden bejelentkezett szervezet tölthet fel képet ehhez a bejegyzéshez.
+          </div>
+
+        </div>
+
+
+        <label class="upload-btn">
+
+          📷 Kép hozzáadása
+
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            data-upload="${recordId}"
+            hidden
+          >
+
+        </label>
+
+      </div>
+
+
+      <div
+        class="image-grid"
+        data-images-for="${recordId}">
+
+        <div class="images-loading">
+          Képek betöltése…
+        </div>
+
+      </div>
+
+    </div>
   `;
 }
 
@@ -325,10 +513,12 @@ function fieldInput(
   const disabled =
     editable ? "" : "disabled";
 
+
   if (type === "textarea") {
 
     return `
       <label>
+
         ${label}
 
         <textarea
@@ -341,8 +531,10 @@ function fieldInput(
     `;
   }
 
+
   return `
     <label>
+
       ${label}
 
       <input
@@ -370,6 +562,7 @@ function fieldSelect(
 
   return `
     <label>
+
       Státusz
 
       <select
@@ -393,6 +586,7 @@ function fieldSelect(
           .join("")}
 
       </select>
+
     </label>
   `;
 }
@@ -413,6 +607,7 @@ async function saveField(event) {
   const value =
     event.target.value;
 
+
   const { error } =
     await supabase.rpc(
       "update_own_record_field",
@@ -423,6 +618,7 @@ async function saveField(event) {
       }
     );
 
+
   if (error) {
 
     alert(
@@ -430,151 +626,98 @@ async function saveField(event) {
       error.message
     );
 
-    await loadRecords();
-
-  } else {
-
-    await loadRecords();
   }
+
+  await loadRecords();
 }
 
 
 // ==========================================
-// TÖRLÉS
+// KÉPFELTÖLTÉS
 // ==========================================
 
-async function deleteRecord(event) {
+async function uploadImages(e) {
 
-  const id =
-    Number(
-      event.currentTarget.dataset.delete
-    );
+  const input =
+    e.currentTarget;
 
-  if (
-    !confirm(
-      "Biztosan törli ezt a bejegyzést?"
-    )
-  ) {
+  const recordId =
+    Number(input.dataset.upload);
+
+  const files =
+    Array.from(input.files || []);
+
+
+  if (!files.length) {
     return;
   }
 
-  const { error } =
-    await supabase
-      .from("records")
-      .delete()
-      .eq("id", id);
-
-  if (error) {
-
-    alert(
-      "Törlési hiba: " +
-      error.message
-    );
-
-  } else {
-
-    await loadRecords();
-  }
-}
-
-
-// ==========================================
-// ÚJ BEJEGYZÉS
-// ==========================================
-
-document.getElementById("addBtn").onclick =
-  async () => {
-
-    const { error } =
-      await supabase
-        .from("records")
-        .insert({
-          created_by: profile.id,
-          organization_id:
-            profile.organization_id,
-          location: "",
-          record_date:
-            new Date()
-              .toISOString()
-              .slice(0, 10),
-          status: "Új"
-        });
-
-    if (error) {
-
-      alert(
-        "Nem sikerült létrehozni: " +
-        error.message
-      );
-
-    } else {
-
-      await loadRecords();
-    }
-  };
-
-
-// ==========================================
-// BIZTONSÁGOS HTML KIÍRÁS
-// ==========================================
-
-function esc(value) {
-
-  return String(value ?? "")
-    .replace(
-      /[&<>"']/g,
-      character => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
-      }[character])
-    );
-}
-async function uploadImages(e) {
-  const input = e.currentTarget;
-  const recordId = Number(input.dataset.upload);
-  const files = Array.from(input.files || []);
-
-  if (!files.length) return;
 
   for (const file of files) {
 
+    // Csak kép
     if (!file.type.startsWith("image/")) {
-      alert("Csak képfájl tölthető fel.");
+
+      alert(
+        "Csak képfájl tölthető fel."
+      );
+
       continue;
     }
 
+
+    // Maximum 10 MB
     if (file.size > 10 * 1024 * 1024) {
+
       alert(
         `A(z) ${file.name} túl nagy. Maximum 10 MB lehet.`
       );
+
       continue;
     }
 
-    const safeName =
-      file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
 
+    // Biztonságos fájlnév
+    const safeName =
+      file.name.replace(
+        /[^a-zA-Z0-9._-]/g,
+        "_"
+      );
+
+
+    // Egyedi storage útvonal
     const path =
       `${profile.id}/${recordId}/${crypto.randomUUID()}-${safeName}`;
+
+
+    // FELTÖLTÉS SUPABASE STORAGE-BA
 
     const { error: uploadError } =
       await supabase.storage
         .from(IMAGE_BUCKET)
-        .upload(path, file, {
-          cacheControl: "3600",
-          upsert: false,
-          contentType: file.type
-        });
+        .upload(
+          path,
+          file,
+          {
+            cacheControl: "3600",
+            upsert: false,
+            contentType: file.type
+          }
+        );
+
 
     if (uploadError) {
+
       alert(
         "Képfeltöltési hiba: " +
         uploadError.message
       );
+
       continue;
     }
+
+
+    // ADATBÁZISBA IS ELMENTJÜK
 
     const { error: dbError } =
       await supabase
@@ -582,12 +725,17 @@ async function uploadImages(e) {
         .insert({
           record_id: recordId,
           uploader_id: profile.id,
-          organization_id: profile.organization_id,
+          organization_id:
+            profile.organization_id,
           storage_path: path,
           original_name: file.name,
           mime_type: file.type,
           size_bytes: file.size
         });
+
+
+    // Ha az adatbázisba nem sikerült
+    // menteni, töröljük a feltöltött fájlt is.
 
     if (dbError) {
 
@@ -595,17 +743,31 @@ async function uploadImages(e) {
         .from(IMAGE_BUCKET)
         .remove([path]);
 
+
       alert(
         "Képadat mentési hiba: " +
         dbError.message
       );
     }
+
   }
+
+
+  // Input ürítése
 
   input.value = "";
 
+
+  // Képek frissítése
+
   await loadImages(recordId);
 }
+
+
+// ==========================================
+// KÉPEK BETÖLTÉSE
+// ==========================================
+
 async function loadImages(recordId) {
 
   const container =
@@ -613,7 +775,13 @@ async function loadImages(recordId) {
       `[data-images-for="${recordId}"]`
     );
 
-  if (!container) return;
+
+  if (!container) {
+    return;
+  }
+
+
+  // KÉPEK ADATAINAK LEKÉRÉSE
 
   const { data, error } =
     await supabase
@@ -632,7 +800,9 @@ async function loadImages(recordId) {
         ascending: false
       });
 
+
   if (error) {
+
     container.innerHTML =
       `<div class="images-error">
         ${esc(error.message)}
@@ -641,7 +811,11 @@ async function loadImages(recordId) {
     return;
   }
 
+
+  // NINCS KÉP
+
   if (!data.length) {
+
     container.innerHTML =
       `<div class="images-empty">
         Még nincs csatolt kép.
@@ -650,15 +824,31 @@ async function loadImages(recordId) {
     return;
   }
 
-  const paths =
-    data.map(x => x.storage_path);
 
-  const { data: signed, error: signedError } =
+  // STORAGE ÚTVONALAK
+
+  const paths =
+    data.map(
+      x => x.storage_path
+    );
+
+
+  // IDEIGLENES, BIZTONSÁGOS URL-EK
+
+  const {
+    data: signed,
+    error: signedError
+  } =
     await supabase.storage
       .from(IMAGE_BUCKET)
-      .createSignedUrls(paths, 3600);
+      .createSignedUrls(
+        paths,
+        3600
+      );
+
 
   if (signedError) {
+
     container.innerHTML =
       `<div class="images-error">
         A képek betöltése sikertelen:
@@ -668,22 +858,35 @@ async function loadImages(recordId) {
     return;
   }
 
+
+  // URL-EK ÖSSZEKAPCSOLÁSA
+
   const urlMap =
     new Map(
       (signed || []).map(
-        x => [x.path, x.signedUrl]
+        x => [
+          x.path,
+          x.signedUrl
+        ]
       )
     );
+
+
+  // KÉPEK MEGJELENÍTÉSE
 
   container.innerHTML =
     data.map(img => {
 
       const url =
-        urlMap.get(img.storage_path);
+        urlMap.get(
+          img.storage_path
+        );
+
 
       const canRemove =
         profile.role === "admin" ||
         img.uploader_id === profile.id;
+
 
       return `
         <figure class="image-card">
@@ -696,6 +899,7 @@ async function loadImages(recordId) {
                   target="_blank"
                   rel="noopener"
                 >
+
                   <img
                     src="${esc(url)}"
                     alt="${esc(
@@ -704,10 +908,12 @@ async function loadImages(recordId) {
                     )}"
                     loading="lazy"
                   >
+
                 </a>
               `
               : ""
           }
+
 
           <figcaption>
 
@@ -717,6 +923,7 @@ async function loadImages(recordId) {
                 "Ismeretlen szervezet"
               )}
             </span>
+
 
             ${
               canRemove
@@ -742,30 +949,58 @@ async function loadImages(recordId) {
 
     }).join("");
 
+
+  // KÉP TÖRLÉS GOMBOK
+
   container
-    .querySelectorAll("[data-delete-image]")
+    .querySelectorAll(
+      "[data-delete-image]"
+    )
     .forEach(
-      el => (el.onclick = deleteImage)
+      el => {
+        el.onclick = deleteImage;
+      }
     );
 }
+
+
+// ==========================================
+// KÉP TÖRLÉSE
+// ==========================================
+
 async function deleteImage(e) {
 
-  const button = e.currentTarget;
+  const button =
+    e.currentTarget;
+
 
   const imageId =
-    Number(button.dataset.deleteImage);
+    Number(
+      button.dataset.deleteImage
+    );
+
 
   const path =
     button.dataset.path;
 
+
   const recordId =
-    Number(button.dataset.record);
+    Number(
+      button.dataset.record
+    );
+
 
   if (
     !confirm(
       "Biztosan törlöd ezt a képet?"
     )
-  ) return;
+  ) {
+
+    return;
+  }
+
+
+  // ADATBÁZISBÓL TÖRLÉS
 
   const { error: dbError } =
     await supabase
@@ -773,20 +1008,30 @@ async function deleteImage(e) {
       .delete()
       .eq("id", imageId);
 
+
   if (dbError) {
+
     alert(
       "Képtörlési hiba: " +
       dbError.message
     );
+
     return;
   }
 
-  const { error: storageError } =
+
+  // STORAGE-BÓL TÖRLÉS
+
+  const {
+    error: storageError
+  } =
     await supabase.storage
       .from(IMAGE_BUCKET)
       .remove([path]);
 
+
   if (storageError) {
+
     alert(
       "A kép adatbázisból törlődött, " +
       "de a fájl törlése nem sikerült: " +
@@ -794,5 +1039,109 @@ async function deleteImage(e) {
     );
   }
 
+
   await loadImages(recordId);
+}
+
+
+// ==========================================
+// ÚJ BEJEGYZÉS
+// ==========================================
+
+document.getElementById("addBtn").onclick =
+  async () => {
+
+    const { error } =
+      await supabase
+        .from("records")
+        .insert({
+          created_by: profile.id,
+          organization_id:
+            profile.organization_id,
+          location: "",
+          record_date:
+            new Date()
+              .toISOString()
+              .slice(0, 10),
+          status: "Új"
+        });
+
+
+    if (error) {
+
+      alert(
+        "Nem sikerült létrehozni: " +
+        error.message
+      );
+
+    } else {
+
+      await loadRecords();
+
+    }
+
+  };
+
+
+// ==========================================
+// BEJEGYZÉS TÖRLÉSE
+// ==========================================
+
+async function deleteRecord(event) {
+
+  const id =
+    Number(
+      event.currentTarget.dataset.delete
+    );
+
+
+  if (
+    !confirm(
+      "Biztosan törli ezt a bejegyzést?"
+    )
+  ) {
+
+    return;
+  }
+
+
+  const { error } =
+    await supabase
+      .from("records")
+      .delete()
+      .eq("id", id);
+
+
+  if (error) {
+
+    alert(
+      "Törlési hiba: " +
+      error.message
+    );
+
+  } else {
+
+    await loadRecords();
+
+  }
+}
+
+
+// ==========================================
+// BIZTONSÁGOS HTML KIÍRÁS
+// ==========================================
+
+function esc(value) {
+
+  return String(value ?? "")
+    .replace(
+      /[&<>"']/g,
+      character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[character])
+    );
 }
