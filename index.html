@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#18232d">
+<title>Közös szervezeti felület</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="login" class="screen">
+  <div class="login-card">
+    <div class="eyebrow">KÖZÖS MUNKAFELÜLET</div>
+    <h1>Bejelentkezés</h1>
+    <p>A szervezeti adatok eléréséhez jelentkezzen be.</p>
+    <input id="email" type="email" placeholder="E-mail cím" autocomplete="email">
+    <input id="password" type="password" placeholder="Jelszó" autocomplete="current-password">
+    <button id="loginBtn">Bejelentkezés</button>
+    <div id="loginMsg" class="message"></div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+<header>
+  <div>
+    <div class="eyebrow">KÖZÖS MUNKAFELÜLET</div>
+    <h1 id="orgName">Betöltés…</h1>
+    <p id="userInfo"></p>
+  </div>
+  <button id="logoutBtn" class="secondary">Kilépés</button>
+</header>
+
+<main>
+  <section class="toolbar">
+    <div><h2>Bejegyzések</h2><p id="permission"></p></div>
+    <button id="addBtn">＋ Új bejegyzés</button>
+  </section>
+  <div id="records"></div>
+</main>
+<footer>GitHub Pages + Supabase</footer>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
