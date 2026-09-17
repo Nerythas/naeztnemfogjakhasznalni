@@ -1,1 +1,31 @@
 *{box-sizing:border-box}body{margin:0;background:#f2f5f7;color:#17212b;font-family:Inter,Segoe UI,Arial,sans-serif}.hidden{display:none!important}.screen{min-height:100vh;display:grid;place-items:center;padding:20px;background:#18232d}.login-card{width:min(420px,100%);background:white;border-radius:16px;padding:28px;box-shadow:0 15px 50px #0005}.eyebrow{font-size:11px;letter-spacing:2px;font-weight:800;opacity:.65}h1{margin:7px 0 8px;font-size:31px}.login-card p{color:#66737f}.login-card input{display:block;width:100%;margin:10px 0;padding:13px;border:1px solid #c4ced5;border-radius:8px;font:inherit}.login-card button{width:100%;margin-top:8px}button{border:0;border-radius:9px;padding:11px 15px;background:#1769aa;color:#fff;font-weight:800;cursor:pointer}.secondary{background:#526473}.danger{background:#9b3c48}.message{margin-top:12px;color:#9b3c48;font-size:14px}header{background:#18232d;color:white;padding:25px 5%;display:flex;justify-content:space-between;align-items:center}header h1{margin:4px 0}header p{margin:0;color:#cbd4db}main{max-width:1050px;margin:auto;padding:25px 5%}.toolbar{display:flex;justify-content:space-between;align-items:end;margin-bottom:16px}.toolbar h2{margin:0 0 5px}.toolbar p{margin:0;color:#687580}.card{background:#fff;border-radius:12px;padding:17px;margin-bottom:15px;box-shadow:0 4px 18px #00000010}.record-head{display:flex;justify-content:space-between;margin-bottom:12px}.record label{display:block;font-size:12px;font-weight:800;color:#5f6d77;margin:11px 0}.record input,.record select,.record textarea{display:block;width:100%;margin-top:5px;padding:11px;border:1px solid #bdc8d0;border-radius:8px;font:inherit;background:white}.record textarea{min-height:80px;resize:vertical}.record input:disabled,.record textarea:disabled,.record select:disabled{background:#f3f5f6;color:#6f7b84}.error{color:#9b3c48}footer{max-width:1050px;margin:auto;padding:0 5% 30px;color:#7b8790;font-size:12px}@media(max-width:650px){header{padding:20px 4%;align-items:flex-start;gap:12px}header h1{font-size:26px}main{padding:18px 4%}.toolbar{display:block}.toolbar button{width:100%;margin-top:12px}.login-card{padding:23px}.record{padding:14px}}
+.section-title {
+  font-size: 14px;
+  font-weight: 800;
+  margin: 18px 0 8px;
+  color: #263642;
+}
+
+.organization-box {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid #e1e6ea;
+}
+
+.organization-title {
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.refomix {
+  background: #fff5f6;
+}
+
+.kozterulet {
+  background: #f3f8ff;
+}
+
+.rendorseg {
+  background: #f3faf5;
+}
