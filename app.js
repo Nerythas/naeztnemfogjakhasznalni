@@ -532,3 +532,267 @@ function esc(value) {
       }[character])
     );
 }
+async function uploadImages(e) {
+  const input = e.currentTarget;
+  const recordId = Number(input.dataset.upload);
+  const files = Array.from(input.files || []);
+
+  if (!files.length) return;
+
+  for (const file of files) {
+
+    if (!file.type.startsWith("image/")) {
+      alert("Csak képfájl tölthető fel.");
+      continue;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert(
+        `A(z) ${file.name} túl nagy. Maximum 10 MB lehet.`
+      );
+      continue;
+    }
+
+    const safeName =
+      file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+
+    const path =
+      `${profile.id}/${recordId}/${crypto.randomUUID()}-${safeName}`;
+
+    const { error: uploadError } =
+      await supabase.storage
+        .from(IMAGE_BUCKET)
+        .upload(path, file, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: file.type
+        });
+
+    if (uploadError) {
+      alert(
+        "Képfeltöltési hiba: " +
+        uploadError.message
+      );
+      continue;
+    }
+
+    const { error: dbError } =
+      await supabase
+        .from("record_images")
+        .insert({
+          record_id: recordId,
+          uploader_id: profile.id,
+          organization_id: profile.organization_id,
+          storage_path: path,
+          original_name: file.name,
+          mime_type: file.type,
+          size_bytes: file.size
+        });
+
+    if (dbError) {
+
+      await supabase.storage
+        .from(IMAGE_BUCKET)
+        .remove([path]);
+
+      alert(
+        "Képadat mentési hiba: " +
+        dbError.message
+      );
+    }
+  }
+
+  input.value = "";
+
+  await loadImages(recordId);
+}
+async function loadImages(recordId) {
+
+  const container =
+    recordsEl.querySelector(
+      `[data-images-for="${recordId}"]`
+    );
+
+  if (!container) return;
+
+  const { data, error } =
+    await supabase
+      .from("record_images")
+      .select(`
+        id,
+        uploader_id,
+        organization_id,
+        storage_path,
+        original_name,
+        created_at,
+        organizations(name)
+      `)
+      .eq("record_id", recordId)
+      .order("created_at", {
+        ascending: false
+      });
+
+  if (error) {
+    container.innerHTML =
+      `<div class="images-error">
+        ${esc(error.message)}
+      </div>`;
+
+    return;
+  }
+
+  if (!data.length) {
+    container.innerHTML =
+      `<div class="images-empty">
+        Még nincs csatolt kép.
+      </div>`;
+
+    return;
+  }
+
+  const paths =
+    data.map(x => x.storage_path);
+
+  const { data: signed, error: signedError } =
+    await supabase.storage
+      .from(IMAGE_BUCKET)
+      .createSignedUrls(paths, 3600);
+
+  if (signedError) {
+    container.innerHTML =
+      `<div class="images-error">
+        A képek betöltése sikertelen:
+        ${esc(signedError.message)}
+      </div>`;
+
+    return;
+  }
+
+  const urlMap =
+    new Map(
+      (signed || []).map(
+        x => [x.path, x.signedUrl]
+      )
+    );
+
+  container.innerHTML =
+    data.map(img => {
+
+      const url =
+        urlMap.get(img.storage_path);
+
+      const canRemove =
+        profile.role === "admin" ||
+        img.uploader_id === profile.id;
+
+      return `
+        <figure class="image-card">
+
+          ${
+            url
+              ? `
+                <a
+                  href="${esc(url)}"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <img
+                    src="${esc(url)}"
+                    alt="${esc(
+                      img.original_name ||
+                      "Csatolt kép"
+                    )}"
+                    loading="lazy"
+                  >
+                </a>
+              `
+              : ""
+          }
+
+          <figcaption>
+
+            <span>
+              ${esc(
+                img.organizations?.name ||
+                "Ismeretlen szervezet"
+              )}
+            </span>
+
+            ${
+              canRemove
+                ? `
+                  <button
+                    class="image-delete"
+                    data-delete-image="${img.id}"
+                    data-path="${esc(
+                      img.storage_path
+                    )}"
+                    data-record="${recordId}"
+                  >
+                    Törlés
+                  </button>
+                `
+                : ""
+            }
+
+          </figcaption>
+
+        </figure>
+      `;
+
+    }).join("");
+
+  container
+    .querySelectorAll("[data-delete-image]")
+    .forEach(
+      el => (el.onclick = deleteImage)
+    );
+}
+async function deleteImage(e) {
+
+  const button = e.currentTarget;
+
+  const imageId =
+    Number(button.dataset.deleteImage);
+
+  const path =
+    button.dataset.path;
+
+  const recordId =
+    Number(button.dataset.record);
+
+  if (
+    !confirm(
+      "Biztosan törlöd ezt a képet?"
+    )
+  ) return;
+
+  const { error: dbError } =
+    await supabase
+      .from("record_images")
+      .delete()
+      .eq("id", imageId);
+
+  if (dbError) {
+    alert(
+      "Képtörlési hiba: " +
+      dbError.message
+    );
+    return;
+  }
+
+  const { error: storageError } =
+    await supabase.storage
+      .from(IMAGE_BUCKET)
+      .remove([path]);
+
+  if (storageError) {
+    alert(
+      "A kép adatbázisból törlődött, " +
+      "de a fájl törlése nem sikerült: " +
+      storageError.message
+    );
+  }
+
+  await loadImages(recordId);
+}
