@@ -1,57 +1,81 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
 
-const login = document.getElementById("login");
-const app = document.getElementById("app");
-const msg = document.getElementById("loginMsg");
-const recordsEl = document.getElementById("records");
+const login =
+  document.getElementById("login");
+
+const app =
+  document.getElementById("app");
+
+const msg =
+  document.getElementById("loginMsg");
+
+const recordsEl =
+  document.getElementById("records");
+
+const setPassword =
+  document.getElementById("setPassword");
+
+const passwordMsg =
+  document.getElementById("passwordMsg");
 
 let profile = null;
 
-const IMAGE_BUCKET = "record-images";
+const IMAGE_BUCKET =
+  "record-images";
 
 
 // ==========================================
 // BEJELENTKEZÉS
 // ==========================================
 
-document.getElementById("loginBtn").onclick = async () => {
-
-  msg.textContent = "Bejelentkezés…";
-
-  const email =
-    document.getElementById("email").value.trim();
-
-  const password =
-    document.getElementById("password").value;
-
-  if (!email || !password) {
+document.getElementById("loginBtn").onclick =
+  async () => {
 
     msg.textContent =
-      "Kérjük, adja meg az e-mail címet és a jelszót.";
+      "Bejelentkezés…";
 
-    return;
-  }
+    const email =
+      document
+        .getElementById("email")
+        .value
+        .trim();
 
-  const { error } =
-    await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+    const password =
+      document
+        .getElementById("password")
+        .value;
 
-  if (error) {
+    if (!email || !password) {
 
-    msg.textContent =
-      error.message;
+      msg.textContent =
+        "Kérjük, adja meg az e-mail címet és a jelszót.";
 
-  } else {
+      return;
+    }
 
-    msg.textContent = "";
+    const { error } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-  }
-};
+    if (error) {
+
+      msg.textContent =
+        error.message;
+
+    } else {
+
+      msg.textContent = "";
+
+    }
+  };
 
 
 // ==========================================
@@ -67,36 +91,75 @@ document.getElementById("logoutBtn").onclick =
 
 
 // ==========================================
-// BEJELENTKEZÉSI ÁLLAPOT FIGYELÉSE
+// AUTH ÁLLAPOT FIGYELÉSE
 // ==========================================
 
 supabase.auth.onAuthStateChange(
-  async (_event, session) => {
+  async (event, session) => {
 
-    if (session) {
-
-      await loadProfile(session.user);
-
-    } else {
+    if (!session) {
 
       profile = null;
 
       app.classList.add("hidden");
-      login.classList.remove("hidden");
 
+      setPassword.classList.add(
+        "hidden"
+      );
+
+      login.classList.remove(
+        "hidden"
+      );
+
+      return;
     }
+
+
+    // ======================================
+    // MEGHÍVÓ / JELSZÓBEÁLLÍTÁS
+    // ======================================
+
+    if (
+      event === "PASSWORD_RECOVERY" ||
+      window.location.hash.includes(
+        "type=recovery"
+      )
+    ) {
+
+      login.classList.add(
+        "hidden"
+      );
+
+      app.classList.add(
+        "hidden"
+      );
+
+      setPassword.classList.remove(
+        "hidden"
+      );
+
+      return;
+    }
+
+
+    await loadProfile(
+      session.user
+    );
 
   }
 );
 
 
 // ==========================================
-// FELHASZNÁLÓ / PROFIL BETÖLTÉSE
+// PROFIL BETÖLTÉSE
 // ==========================================
 
 async function loadProfile(user) {
 
-  const { data, error } =
+  const {
+    data,
+    error
+  } =
     await supabase
       .from("profiles")
       .select(`
@@ -109,20 +172,32 @@ async function loadProfile(user) {
           name
         )
       `)
-      .eq("id", user.id)
+      .eq(
+        "id",
+        user.id
+      )
       .maybeSingle();
 
 
   // ========================================
-  // ADATBÁZIS HIBA
+  // PROFIL HIBA
   // ========================================
 
   if (error) {
 
     profile = null;
 
-    app.classList.add("hidden");
-    login.classList.remove("hidden");
+    app.classList.add(
+      "hidden"
+    );
+
+    setPassword.classList.add(
+      "hidden"
+    );
+
+    login.classList.remove(
+      "hidden"
+    );
 
     msg.textContent =
       "A profil betöltése nem sikerült: " +
@@ -133,7 +208,7 @@ async function loadProfile(user) {
 
 
   // ========================================
-  // NINCS MÉG PROFIL / SZERVEZET
+  // MÉG NINCS SZERVEZET
   // ========================================
 
   if (
@@ -144,8 +219,17 @@ async function loadProfile(user) {
 
     profile = null;
 
-    app.classList.add("hidden");
-    login.classList.remove("hidden");
+    app.classList.add(
+      "hidden"
+    );
+
+    setPassword.classList.add(
+      "hidden"
+    );
+
+    login.classList.remove(
+      "hidden"
+    );
 
     msg.textContent =
       "A fiókja aktiválva van, de még nincs szervezethez rendelve. Kérjük, várja meg, amíg a rendszergazda hozzárendeli a szervezetét.";
@@ -160,21 +244,36 @@ async function loadProfile(user) {
 
   profile = data;
 
-  login.classList.add("hidden");
-  app.classList.remove("hidden");
+  login.classList.add(
+    "hidden"
+  );
+
+  setPassword.classList.add(
+    "hidden"
+  );
+
+  app.classList.remove(
+    "hidden"
+  );
 
 
-  document.getElementById("orgName").textContent =
+  document.getElementById(
+    "orgName"
+  ).textContent =
     data.organizations.name;
 
 
-  document.getElementById("userInfo").textContent =
+  document.getElementById(
+    "userInfo"
+  ).textContent =
     (data.full_name || user.email) +
     " · " +
     data.organizations.name;
 
 
-  document.getElementById("permission").textContent =
+  document.getElementById(
+    "permission"
+  ).textContent =
     "A saját szervezeti mezők módosíthatók. Más szervezetek adatai csak olvashatók. A képek minden bejelentkezett felhasználó számára megtekinthetők és feltölthetők.";
 
 
@@ -188,13 +287,19 @@ async function loadProfile(user) {
 
 async function loadRecords() {
 
-  const { data, error } =
+  const {
+    data,
+    error
+  } =
     await supabase
       .from("records_view")
       .select("*")
-      .order("created_at", {
-        ascending: false
-      });
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      );
 
 
   if (error) {
@@ -208,7 +313,10 @@ async function loadRecords() {
   }
 
 
-  if (!data || data.length === 0) {
+  if (
+    !data ||
+    data.length === 0
+  ) {
 
     recordsEl.innerHTML =
       '<div class="card">Még nincs bejegyzés.</div>';
@@ -218,15 +326,15 @@ async function loadRecords() {
 
 
   recordsEl.innerHTML =
-    data.map(renderRecord).join("");
+    data
+      .map(renderRecord)
+      .join("");
 
-
-  // ========================================
-  // MEZŐK MENTÉSE
-  // ========================================
 
   recordsEl
-    .querySelectorAll("[data-save]")
+    .querySelectorAll(
+      "[data-save]"
+    )
     .forEach(el => {
 
       el.addEventListener(
@@ -237,12 +345,10 @@ async function loadRecords() {
     });
 
 
-  // ========================================
-  // BEJEGYZÉS TÖRLÉSE
-  // ========================================
-
   recordsEl
-    .querySelectorAll("[data-delete]")
+    .querySelectorAll(
+      "[data-delete]"
+    )
     .forEach(el => {
 
       el.addEventListener(
@@ -253,12 +359,10 @@ async function loadRecords() {
     });
 
 
-  // ========================================
-  // KÉPFELTÖLTÉS
-  // ========================================
-
   recordsEl
-    .querySelectorAll("[data-upload]")
+    .querySelectorAll(
+      "[data-upload]"
+    )
     .forEach(el => {
 
       el.addEventListener(
@@ -269,10 +373,6 @@ async function loadRecords() {
     });
 
 
-  // ========================================
-  // KÉPEK BETÖLTÉSE
-  // ========================================
-
   const imageContainers =
     recordsEl.querySelectorAll(
       "[data-images-for]"
@@ -280,7 +380,9 @@ async function loadRecords() {
 
 
   await Promise.all(
-    Array.from(imageContainers).map(el =>
+    Array.from(
+      imageContainers
+    ).map(el =>
       loadImages(
         Number(
           el.dataset.imagesFor
@@ -295,13 +397,16 @@ async function loadRecords() {
 // JOGOSULTSÁG
 // ==========================================
 
-function canEditField(record, field) {
+function canEditField(
+  record,
+  field
+) {
 
-  // ADMIN MINDENT MÓDOSÍTHAT
-  if (profile.role === "admin") {
+  if (
+    profile.role === "admin"
+  ) {
 
     return true;
-
   }
 
 
@@ -309,31 +414,42 @@ function canEditField(record, field) {
     profile.organizations.name;
 
 
-  // REFOmix
-  if (field === "refomix_note") {
+  if (
+    field === "refomix_note"
+  ) {
 
-    return organization === "ReFoMix";
-
-  }
-
-
-  // KÖZTERÜLET
-  if (field === "kozterulet_note") {
-
-    return organization === "Közterület";
+    return (
+      organization ===
+      "ReFoMix"
+    );
 
   }
 
 
-  // RENDŐRSÉG
-  if (field === "rendorseg_note") {
+  if (
+    field === "kozterulet_note"
+  ) {
 
-    return organization === "Rendőrség";
+    return (
+      organization ===
+      "Közterület"
+    );
 
   }
 
 
-  // KÖZÖS ADATOK
+  if (
+    field === "rendorseg_note"
+  ) {
+
+    return (
+      organization ===
+      "Rendőrség"
+    );
+
+  }
+
+
   if (
     field === "location" ||
     field === "record_date" ||
@@ -356,7 +472,9 @@ function canEditField(record, field) {
 // BEJEGYZÉS MEGJELENÍTÉSE
 // ==========================================
 
-function renderRecord(record) {
+function renderRecord(
+  record
+) {
 
   const canLocation =
     canEditField(
@@ -547,7 +665,9 @@ function renderRecord(record) {
 // KÉPEK SZEKCIÓ
 // ==========================================
 
-function imageSection(recordId) {
+function imageSection(
+  recordId
+) {
 
   return `
     <div class="images-section">
@@ -586,7 +706,8 @@ function imageSection(recordId) {
 
       <div
         class="image-grid"
-        data-images-for="${recordId}">
+        data-images-for="${recordId}"
+      >
 
         <div class="images-loading">
           Képek betöltése…
@@ -618,7 +739,9 @@ function fieldInput(
       : "disabled";
 
 
-  if (type === "textarea") {
+  if (
+    type === "textarea"
+  ) {
 
     return `
       <label>
@@ -682,9 +805,11 @@ function fieldSelect(
         ]
           .map(status => `
             <option
-              ${value === status
-                ? "selected"
-                : ""}
+              ${
+                value === status
+                  ? "selected"
+                  : ""
+              }
             >
               ${status}
             </option>
@@ -702,7 +827,9 @@ function fieldSelect(
 // MENTÉS
 // ==========================================
 
-async function saveField(event) {
+async function saveField(
+  event
+) {
 
   const id =
     Number(
@@ -718,7 +845,9 @@ async function saveField(event) {
     event.target.value;
 
 
-  const { error } =
+  const {
+    error
+  } =
     await supabase.rpc(
       "update_own_record_field",
       {
@@ -748,7 +877,9 @@ async function saveField(event) {
 // KÉPFELTÖLTÉS
 // ==========================================
 
-async function uploadImages(e) {
+async function uploadImages(
+  e
+) {
 
   const input =
     e.currentTarget;
@@ -771,9 +902,15 @@ async function uploadImages(e) {
   }
 
 
-  for (const file of files) {
+  for (
+    const file of files
+  ) {
 
-    if (!file.type.startsWith("image/")) {
+    if (
+      !file.type.startsWith(
+        "image/"
+      )
+    ) {
 
       alert(
         "Csak képfájl tölthető fel."
@@ -818,7 +955,8 @@ async function uploadImages(e) {
           {
             cacheControl: "3600",
             upsert: false,
-            contentType: file.type
+            contentType:
+              file.type
           }
         );
 
@@ -841,13 +979,18 @@ async function uploadImages(e) {
         .from("record_images")
         .insert({
           record_id: recordId,
-          uploader_id: profile.id,
+          uploader_id:
+            profile.id,
           organization_id:
             profile.organization_id,
-          storage_path: path,
-          original_name: file.name,
-          mime_type: file.type,
-          size_bytes: file.size
+          storage_path:
+            path,
+          original_name:
+            file.name,
+          mime_type:
+            file.type,
+          size_bytes:
+            file.size
         });
 
 
@@ -855,7 +998,9 @@ async function uploadImages(e) {
 
       await supabase.storage
         .from(IMAGE_BUCKET)
-        .remove([path]);
+        .remove([
+          path
+        ]);
 
 
       alert(
@@ -869,7 +1014,9 @@ async function uploadImages(e) {
 
   input.value = "";
 
-  await loadImages(recordId);
+  await loadImages(
+    recordId
+  );
 }
 
 
@@ -877,7 +1024,9 @@ async function uploadImages(e) {
 // KÉPEK BETÖLTÉSE
 // ==========================================
 
-async function loadImages(recordId) {
+async function loadImages(
+  recordId
+) {
 
   const container =
     recordsEl.querySelector(
@@ -983,80 +1132,84 @@ async function loadImages(recordId) {
 
 
   container.innerHTML =
-    data.map(img => {
+    data
+      .map(img => {
 
-      const url =
-        urlMap.get(
-          img.storage_path
-        );
-
-
-      const canRemove =
-        profile.role === "admin" ||
-        img.uploader_id ===
-        profile.id;
+        const url =
+          urlMap.get(
+            img.storage_path
+          );
 
 
-      return `
-        <figure class="image-card">
-
-          ${
-            url
-              ? `
-                <a
-                  href="${esc(url)}"
-                  target="_blank"
-                  rel="noopener"
-                >
-
-                  <img
-                    src="${esc(url)}"
-                    alt="${esc(
-                      img.original_name ||
-                      "Csatolt kép"
-                    )}"
-                    loading="lazy"
-                  >
-
-                </a>
-              `
-              : ""
-          }
+        const canRemove =
+          profile.role === "admin" ||
+          img.uploader_id ===
+          profile.id;
 
 
-          <figcaption>
-
-            <span>
-              ${esc(
-                img.organizations?.name ||
-                "Ismeretlen szervezet"
-              )}
-            </span>
-
+        return `
+          <figure
+            class="image-card"
+          >
 
             ${
-              canRemove
+              url
                 ? `
-                  <button
-                    class="image-delete"
-                    data-delete-image="${img.id}"
-                    data-path="${esc(
-                      img.storage_path
-                    )}"
-                    data-record="${recordId}"
+                  <a
+                    href="${esc(url)}"
+                    target="_blank"
+                    rel="noopener"
                   >
-                    Törlés
-                  </button>
+
+                    <img
+                      src="${esc(url)}"
+                      alt="${esc(
+                        img.original_name ||
+                        "Csatolt kép"
+                      )}"
+                      loading="lazy"
+                    >
+
+                  </a>
                 `
                 : ""
             }
 
-          </figcaption>
 
-        </figure>
-      `;
+            <figcaption>
 
-    }).join("");
+              <span>
+                ${esc(
+                  img.organizations?.name ||
+                  "Ismeretlen szervezet"
+                )}
+              </span>
+
+
+              ${
+                canRemove
+                  ? `
+                    <button
+                      class="image-delete"
+                      data-delete-image="${img.id}"
+                      data-path="${esc(
+                        img.storage_path
+                      )}"
+                      data-record="${recordId}"
+                    >
+                      Törlés
+                    </button>
+                  `
+                  : ""
+              }
+
+            </figcaption>
+
+          </figure>
+        `;
+
+      })
+      .join("");
 
 
   container
@@ -1065,7 +1218,8 @@ async function loadImages(recordId) {
     )
     .forEach(el => {
 
-      el.onclick = deleteImage;
+      el.onclick =
+        deleteImage;
 
     });
 }
@@ -1075,7 +1229,9 @@ async function loadImages(recordId) {
 // KÉP TÖRLÉSE
 // ==========================================
 
-async function deleteImage(e) {
+async function deleteImage(
+  e
+) {
 
   const button =
     e.currentTarget;
@@ -1135,7 +1291,9 @@ async function deleteImage(e) {
   } =
     await supabase.storage
       .from(IMAGE_BUCKET)
-      .remove([path]);
+      .remove([
+        path
+      ]);
 
 
   if (storageError) {
@@ -1148,7 +1306,9 @@ async function deleteImage(e) {
   }
 
 
-  await loadImages(recordId);
+  await loadImages(
+    recordId
+  );
 }
 
 
@@ -1156,10 +1316,14 @@ async function deleteImage(e) {
 // ÚJ BEJEGYZÉS
 // ==========================================
 
-document.getElementById("addBtn").onclick =
+document.getElementById(
+  "addBtn"
+).onclick =
   async () => {
 
-    const { error } =
+    const {
+      error
+    } =
       await supabase
         .from("records")
         .insert({
@@ -1197,7 +1361,9 @@ document.getElementById("addBtn").onclick =
 // BEJEGYZÉS TÖRLÉSE
 // ==========================================
 
-async function deleteRecord(event) {
+async function deleteRecord(
+  event
+) {
 
   const id =
     Number(
@@ -1215,7 +1381,9 @@ async function deleteRecord(event) {
   }
 
 
-  const { error } =
+  const {
+    error
+  } =
     await supabase
       .from("records")
       .delete()
@@ -1241,10 +1409,12 @@ async function deleteRecord(event) {
 
 
 // ==========================================
-// DÁTUM ÉS IDŐ FORMÁZÁSA
+// DÁTUM ÉS IDŐ
 // ==========================================
 
-function formatDateTime(value) {
+function formatDateTime(
+  value
+) {
 
   if (!value) {
     return "";
@@ -1255,7 +1425,12 @@ function formatDateTime(value) {
     new Date(value);
 
 
-  if (isNaN(date.getTime())) {
+  if (
+    isNaN(
+      date.getTime()
+    )
+  ) {
+
     return "";
   }
 
@@ -1274,21 +1449,144 @@ function formatDateTime(value) {
 
 
 // ==========================================
-// BIZTONSÁGOS HTML KIÍRÁS
+// BIZTONSÁGOS HTML
 // ==========================================
 
-function esc(value) {
+function esc(
+  value
+) {
 
   return String(
     value ?? ""
   ).replace(
     /[&<>"']/g,
     character => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;"
+      "&":
+        "&amp;",
+      "<":
+        "&lt;",
+      ">":
+        "&gt;",
+      '"':
+        "&quot;",
+      "'":
+        "&#039;"
     }[character])
   );
 }
+
+
+// ==========================================
+// JELSZÓ BEÁLLÍTÁSA
+// ==========================================
+
+document.getElementById(
+  "setPasswordBtn"
+).onclick =
+  async () => {
+
+    const password =
+      document
+        .getElementById(
+          "newPassword"
+        )
+        .value;
+
+
+    const password2 =
+      document
+        .getElementById(
+          "newPassword2"
+        )
+        .value;
+
+
+    if (
+      !password ||
+      !password2
+    ) {
+
+      passwordMsg.textContent =
+        "Kérjük, töltse ki mindkét mezőt.";
+
+      return;
+    }
+
+
+    if (
+      password.length < 6
+    ) {
+
+      passwordMsg.textContent =
+        "A jelszónak legalább 6 karakter hosszúnak kell lennie.";
+
+      return;
+    }
+
+
+    if (
+      password !== password2
+    ) {
+
+      passwordMsg.textContent =
+        "A két jelszó nem egyezik.";
+
+      return;
+    }
+
+
+    passwordMsg.textContent =
+      "Jelszó mentése…";
+
+
+    const {
+      error
+    } =
+      await supabase.auth.updateUser({
+        password:
+          password
+      });
+
+
+    if (error) {
+
+      passwordMsg.textContent =
+        "Hiba: " +
+        error.message;
+
+      return;
+    }
+
+
+    passwordMsg.textContent =
+      "A jelszó sikeresen beállítva.";
+
+
+    // Jelszó beállítása után
+    // betöltjük a profilt.
+
+    const {
+      data: userData
+    } =
+      await supabase.auth.getUser();
+
+
+    if (
+      userData &&
+      userData.user
+    ) {
+
+      setTimeout(
+        async () => {
+
+          await loadProfile(
+            userData.user
+          );
+
+        },
+        800
+      );
+
+    }
+
+  };
