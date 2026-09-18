@@ -19,7 +19,45 @@
     <div id="loginMsg" class="message"></div>
   </div>
 </div>
+<!-- ==========================================
+     JELSZÓ BEÁLLÍTÁSA
+     ========================================== -->
 
+<div id="setPassword" class="card hidden">
+
+  <h2>Fiók aktiválása</h2>
+
+  <p>
+    A rendszer használatához kérjük, állítsa be a jelszavát.
+  </p>
+
+  <label>
+    Új jelszó
+
+    <input
+      type="password"
+      id="newPassword"
+      placeholder="Adja meg az új jelszót"
+    >
+  </label>
+
+  <label>
+    Jelszó ismét
+
+    <input
+      type="password"
+      id="newPassword2"
+      placeholder="Adja meg újra a jelszót"
+    >
+  </label>
+
+  <button id="setPasswordBtn">
+    Jelszó beállítása
+  </button>
+
+  <div id="passwordMsg"></div>
+
+</div>
 <div id="app" class="hidden">
 <header>
   <div>
