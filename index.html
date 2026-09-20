@@ -1,83 +1,276 @@
 <!doctype html>
 <html lang="hu">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#18232d">
-<title>Közös szervezeti felület</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  >
+
+  <meta
+    name="theme-color"
+    content="#18232d"
+  >
+
+  <title>Közös munkafelület</title>
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
 </head>
+
 <body>
-<div id="login" class="screen">
-  <div class="login-card">
-    <div class="eyebrow">KÖZÖS MUNKAFELÜLET</div>
-    <h1>Bejelentkezés</h1>
-    <p>A szervezeti adatok eléréséhez jelentkezzen be.</p>
-    <input id="email" type="email" placeholder="E-mail cím" autocomplete="email">
-    <input id="password" type="password" placeholder="Jelszó" autocomplete="current-password">
-    <button id="loginBtn">Bejelentkezés</button>
-    <div id="loginMsg" class="message"></div>
-  </div>
-</div>
+
 <!-- ==========================================
-     JELSZÓ BEÁLLÍTÁSA
+     BEJELENTKEZÉS
      ========================================== -->
 
-<div id="setPassword" class="card hidden">
+<div id="login" class="screen">
 
-  <h2>Fiók aktiválása</h2>
+  <div class="login-card">
 
-  <p>
-    A rendszer használatához kérjük, állítsa be a jelszavát.
-  </p>
+    <div class="eyebrow">
+      KÖZÖS MUNKAFELÜLET
+    </div>
 
-  <label>
-    Új jelszó
+    <h1>Bejelentkezés</h1>
 
-    <input
-      type="password"
-      id="newPassword"
-      placeholder="Adja meg az új jelszót"
-    >
-  </label>
-
-  <label>
-    Jelszó ismét
+    <p>
+      A szervezeti adatok eléréséhez jelentkezzen be.
+    </p>
 
     <input
-      type="password"
-      id="newPassword2"
-      placeholder="Adja meg újra a jelszót"
+      id="email"
+      type="email"
+      placeholder="E-mail cím"
+      autocomplete="email"
     >
-  </label>
 
-  <button id="setPasswordBtn">
-    Jelszó beállítása
-  </button>
+    <input
+      id="password"
+      type="password"
+      placeholder="Jelszó"
+      autocomplete="current-password"
+    >
 
-  <div id="passwordMsg"></div>
+    <button id="loginBtn">
+      Bejelentkezés
+    </button>
 
-</div>
-<div id="app" class="hidden">
-<header>
-  <div>
-    <div class="eyebrow">KÖZÖS MUNKAFELÜLET</div>
-    <h1 id="orgName">Betöltés…</h1>
-    <p id="userInfo"></p>
+    <div
+      id="loginMsg"
+      class="message"
+    ></div>
+
   </div>
-  <button id="logoutBtn" class="secondary">Kilépés</button>
-</header>
 
-<main>
-  <section class="toolbar">
-    <div><h2>Bejegyzések</h2><p id="permission"></p></div>
-    <button id="addBtn">＋ Új bejegyzés</button>
-  </section>
-  <div id="records"></div>
-</main>
-<footer>GitHub Pages + Supabase</footer>
 </div>
 
-<script type="module" src="app.js"></script>
+
+<!-- ==========================================
+     JELSZÓ BEÁLLÍTÁSA / VISSZAÁLLÍTÁSA
+     ========================================== -->
+
+<div
+  id="setPassword"
+  class="screen hidden"
+>
+
+  <div class="login-card">
+
+    <div class="eyebrow">
+      KÖZÖS MUNKAFELÜLET
+    </div>
+
+    <h1>Fiók aktiválása</h1>
+
+    <p>
+      Állítsa be az új jelszavát a rendszer használatához.
+    </p>
+
+    <input
+      id="newPassword"
+      type="password"
+      placeholder="Új jelszó"
+      autocomplete="new-password"
+    >
+
+    <input
+      id="newPassword2"
+      type="password"
+      placeholder="Új jelszó ismét"
+      autocomplete="new-password"
+    >
+
+    <button id="setPasswordBtn">
+      Jelszó beállítása
+    </button>
+
+    <div
+      id="passwordMsg"
+      class="message"
+    ></div>
+
+  </div>
+
+</div>
+
+
+<!-- ==========================================
+     ALKALMAZÁS
+     ========================================== -->
+
+<div
+  id="app"
+  class="hidden"
+>
+
+  <header>
+
+    <div class="header-title">
+
+      <div class="eyebrow">
+        KÖZÖS MUNKAFELÜLET
+      </div>
+
+      <h1 id="orgName">
+        Betöltés…
+      </h1>
+
+      <p id="userInfo"></p>
+
+    </div>
+
+    <div class="header-actions">
+
+      <button
+        id="changePasswordBtn"
+        class="secondary"
+      >
+        🔑 Jelszó cseréje
+      </button>
+
+      <button
+        id="logoutBtn"
+        class="secondary"
+      >
+        Kilépés
+      </button>
+
+    </div>
+
+  </header>
+
+
+  <main>
+
+    <section class="toolbar">
+
+      <div>
+
+        <h2>
+          Bejegyzések
+        </h2>
+
+        <p id="permission"></p>
+
+      </div>
+
+      <button id="addBtn">
+        ＋ Új bejegyzés
+      </button>
+
+    </section>
+
+
+    <div id="records"></div>
+
+  </main>
+
+
+  <footer>
+    GitHub + Netlify + Supabase
+  </footer>
+
+</div>
+
+
+<!-- ==========================================
+     JELSZÓ CSERE ABLAK
+     ========================================== -->
+
+<div
+  id="passwordChangeModal"
+  class="password-modal hidden"
+>
+
+  <div class="password-modal-content">
+
+    <button
+      id="closePasswordModal"
+      class="password-close"
+      type="button"
+    >
+      ×
+    </button>
+
+    <h2>
+      🔑 Jelszó cseréje
+    </h2>
+
+    <p>
+      Adja meg az új jelszavát.
+    </p>
+
+    <label>
+      Új jelszó
+
+      <input
+        id="changePassword1"
+        type="password"
+        placeholder="Új jelszó"
+        autocomplete="new-password"
+      >
+
+    </label>
+
+    <label>
+      Új jelszó ismét
+
+      <input
+        id="changePassword2"
+        type="password"
+        placeholder="Új jelszó ismét"
+        autocomplete="new-password"
+      >
+
+    </label>
+
+    <button
+      id="savePasswordBtn"
+      class="primary-btn"
+      type="button"
+    >
+      Jelszó módosítása
+    </button>
+
+    <div
+      id="changePasswordMsg"
+      class="message"
+    ></div>
+
+  </div>
+
+</div>
+
+
+<script
+  type="module"
+  src="app.js"
+></script>
+
 </body>
 </html>
